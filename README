@@ -1,0 +1,23 @@
+# Terminal Juice
+## not much on it's own, but beautiful when heated.
+
+Terminal Juice is a wrapper around the termios ABI/API providing a simple
+interface for setting terminal configurations. Terminal Juice also provides a
+simple interface for basic terminal operations like cursor placement and
+printing/reading.
+
+Terminal Juice is intended for creating quick interactive command line
+interfaces. With it's simple interface and "you get what you pay for" approach,
+Terminal Juice is extendable to provide the backbone of any system you write. 
+
+## Warnings
+
+Terminal Juice is an opinionated library, so it may not be well suited for all
+purpose use. It takes inspiration from How different actions can be chained
+together via the `IO` monad in Haskell, while still being able to work with
+non functional code.
+
+Terminal Juice relies on the transformer model, This model isn't the most
+Beginner friendly, but is ultimately simpler. The Transformer model is
+inheritently lazy. Because of this, methods are defined to allow for simple
+context coercion.

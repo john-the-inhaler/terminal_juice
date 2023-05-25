@@ -1,0 +1,11 @@
+[package]
+name = "terminal-juice"
+version = "0.1.0"
+edition = "2021"
+readme  = "README"
+
+[lib]
+name = "terminal_juice"
+path = "src/lib.rs"
+
+[dependencies]
