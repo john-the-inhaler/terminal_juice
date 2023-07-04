@@ -5,6 +5,7 @@ edition = "2021"
 readme  = "README"
 description = "An opinionated terminal control library"
 repository = "https://github.com/john-the-inhaler/terminal_juice"
+license = "MIT"
 
 [lib]
 name = "terminal_juice"
