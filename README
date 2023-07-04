@@ -15,9 +15,8 @@ Terminal Juice is extendable to provide the backbone of any system you write.
 Terminal Juice is an opinionated library, so it may not be well suited for all
 purpose use. It takes inspiration from How different actions can be chained
 together via the `IO` monad in Haskell, while still being able to work with
-non functional code.
+non functional code. This doesn't work like the `IO` monad in Haskell, don't
+expect simple & efficient lazy evaluation. Any lazy evaluation implemented
+will be focused on what can encoded statically (Which will work nicely with
+optimisation).
 
-Terminal Juice relies on the transformer model, This model isn't the most
-Beginner friendly, but is ultimately simpler. The Transformer model is
-inheritently lazy. Because of this, methods are defined to allow for simple
-context coercion.
