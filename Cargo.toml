@@ -3,6 +3,8 @@ name = "terminal-juice"
 version = "0.1.0"
 edition = "2021"
 readme  = "README"
+description = "An opinionated terminal control library"
+repository = "https://github.com/john-the-inhaler/terminal_juice"
 
 [lib]
 name = "terminal_juice"
