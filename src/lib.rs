@@ -125,6 +125,24 @@ impl<I: TermIn, O: TermOut> Terminal<I, O> {
     pub fn style_clear(&mut self) -> io::Result<()> {
         self.write(b"\x1b[0m").map(|_| ())
     }
+
+    pub fn pull_utf8(&mut self) -> io::Result<Option<char>> {
+        // this is so fun :)
+        // hoping that the standard is true with a max of 4
+        let mut buff = [0u8; 4];
+        self.read_exact(&mut buff[0 .. 1])?;
+        let elen = buff[0].leading_ones() as usize;
+        if elen == 0 { return Ok(Some(buff[0] as char)) }
+        else if elen == 1 { return Ok(None) }
+        assert!(elen <= 4, "The Standard Lied!!");
+        self.read_exact(&mut buff[1 .. elen])?;
+        
+        let mut loc : u32 = (buff[0] & (0xff >> elen)) as u32;
+        for x in &buff[1 .. elen] {
+            loc = (loc << 6) + (x & 0x3fu8) as u32;
+        }
+        Ok(char::from_u32(loc))
+    }
 }
 
 impl<I: TermIn, O: TermOut> Write for Terminal<I, O> {
