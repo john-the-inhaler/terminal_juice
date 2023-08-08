@@ -187,7 +187,7 @@ impl<I: TermIn, O: TermOut> Drop for Terminal<I, O> {
 /// via the `change` method on `Terminal`.
 pub struct Transform<'a, I: TermIn, O: TermOut> {
     source: &'a mut Terminal<I, O>,
-    config: termios,    
+    config: termios, 
 }
 
 impl<'a, I: TermIn, O: TermOut> Transform<'a, I, O> {
@@ -211,6 +211,90 @@ impl<'a, I: TermIn, O: TermOut> Transform<'a, I, O> {
     }
 }
 
+pub trait TermTransform: Sized {
+    fn commit
+        <I: TermIn, O: TermOut>
+        (self, t: &mut Terminal<I, O>) -> io::Result<()>;
+    fn fullscreen(self, x: bool) -> Fullscreen<Self> {
+        Fullscreen(self, x)
+    }
+    fn foreground(self, c: Colour) -> Foreground<Self> {
+        Foreground(self, c)
+    }
+    fn background(self, c: Colour) -> Background<Self> {
+        Background(self, c)
+    }
+    fn echo(self, x: bool) -> Echo<Self> {
+        Echo(self, x)
+    }
+    fn canon(self, x: bool) -> Canon<Self> {
+        Canon(self, x)
+    }
+}
+
+
+pub struct Fullscreen<T: TermTransform>(T, bool);
+pub struct Foreground<T: TermTransform>(T, Colour);
+pub struct Background<T: TermTransform>(T, Colour);
+pub struct Echo<T: TermTransform>(T, bool);
+pub struct Canon<T: TermTransform>(T, bool);
+
+impl<T: TermTransform> TermTransform for Fullscreen<T> {
+    fn commit<I: TermIn, O: TermOut>(self, t: &mut Terminal<I ,O>)
+        -> io::Result<()>
+    {
+        self.0.commit(t)?;
+        if self.1 {
+            t.write(b"\x1b[?1049h")?;
+        } else {
+            t.write(b"\x1b[?1049l")?;
+        }
+        Ok(())
+    }
+    /*
+    fn fullscreen(self, x) -> Fullscreen<T> {
+        Fullscreen(self.0, x)
+    }
+    */
+}
+impl<T: TermTransform> TermTransform for Foreground<T> {
+    fn commit<I: TermIn, O: TermOut>(self, t: &mut Terminal<I ,O>)
+        -> io::Result<()>
+    {
+        self.0.commit(t)?;
+        t.foreground(self.1)
+    }
+}
+impl<T: TermTransform> TermTransform for Background<T> {
+    fn commit<I: TermIn, O: TermOut>(self, t: &mut Terminal<I ,O>)
+        -> io::Result<()>
+    {
+        self.0.commit(t)?;
+        t.background(self.1)
+    }
+}
+impl<T: TermTransform> TermTransform for Echo<T> {
+    fn commit<I: TermIn, O: TermOut>(self, t: &mut Terminal<I, O>)
+        -> io::Result<()>
+    {
+       t.current.c_lflag &= !ECHO;
+       if self.1 { t.current.c_lflag |= ECHO; }
+       unsafe {
+           io_result(tcsetattr(t.stdout.as_raw_fd(), TCSANOW, &t.current))
+       }
+    }
+}
+impl<T: TermTransform> TermTransform for Canon<T> {
+    fn commit<I: TermIn, O: TermOut>(self, t: &mut Terminal<I, O>)
+        -> io::Result<()>
+    {
+       t.current.c_lflag &= !ICANON;
+       if self.1 { t.current.c_lflag |= ICANON; }
+       unsafe {
+           io_result(tcsetattr(t.stdout.as_raw_fd(), TCSANOW, &t.current))
+       }
+    }
+}
 /// # Colour
 /// a simple enum type for representing the different colour formats that are
 /// supported via ANSI escape codes.
