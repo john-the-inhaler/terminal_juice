@@ -257,6 +257,15 @@ impl<T: TermTransform> TermTransform for Fullscreen<T> {
     }
     */
 }
+
+impl TermTransform for () {
+    fn commit<I: TermIn, O: TermOut>(self, _t: &mut Terminal<I ,O>)
+        -> io::Result<()>
+    {
+        Ok(())
+    }
+}
+
 impl<T: TermTransform> TermTransform for Foreground<T> {
     fn commit<I: TermIn, O: TermOut>(self, t: &mut Terminal<I ,O>)
         -> io::Result<()>
