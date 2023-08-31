@@ -23,6 +23,8 @@ const TCSANOW: i32 =        0;
 const ICANON : u32 = 0o000002;
 const ECHO   : u32 = 0o000010;
 
+const VMIN : usize = 0x00000006;
+
 #[inline(always)]
 fn io_result(result: i32) -> io::Result<()> {
     if result == 0 { Ok(()) }
@@ -122,8 +124,19 @@ impl<I: TermIn, O: TermOut> Terminal<I, O> {
                                                .as_bytes()),
         }.map(|_| ())
     }
+    /// this will become private
+    pub fn set_vmin(&mut self, val: u8) -> io::Result<()> {
+        self.current.c_cc[VMIN] = val;
+        unsafe { io_result(tcsetattr(self.stdout.as_raw_fd(), TCSANOW, &self.current)) }
+    }
+
     pub fn style_clear(&mut self) -> io::Result<()> {
         self.write(b"\x1b[0m").map(|_| ())
+    }
+    /// This will become private in the future
+    pub fn style_direct(&mut self, code: u8) -> io::Result<()> {
+        write!(self, "\x1b[{code}m")?;
+        Ok(())
     }
 
     pub fn pull_utf8(&mut self) -> io::Result<Option<char>> {
@@ -270,16 +283,16 @@ impl<T: TermTransform> TermTransform for Foreground<T> {
     fn commit<I: TermIn, O: TermOut>(self, t: &mut Terminal<I ,O>)
         -> io::Result<()>
     {
-        self.0.commit(t)?;
-        t.foreground(self.1)
+        t.foreground(self.1)?;
+        self.0.commit(t)
     }
 }
 impl<T: TermTransform> TermTransform for Background<T> {
     fn commit<I: TermIn, O: TermOut>(self, t: &mut Terminal<I ,O>)
         -> io::Result<()>
     {
-        self.0.commit(t)?;
-        t.background(self.1)
+        t.background(self.1)?;
+        self.0.commit(t)
     }
 }
 impl<T: TermTransform> TermTransform for Echo<T> {
@@ -289,8 +302,9 @@ impl<T: TermTransform> TermTransform for Echo<T> {
        t.current.c_lflag &= !ECHO;
        if self.1 { t.current.c_lflag |= ECHO; }
        unsafe {
-           io_result(tcsetattr(t.stdout.as_raw_fd(), TCSANOW, &t.current))
+           io_result(tcsetattr(t.stdout.as_raw_fd(), TCSANOW, &t.current))?;
        }
+       self.0.commit(t)
     }
 }
 impl<T: TermTransform> TermTransform for Canon<T> {
@@ -300,8 +314,9 @@ impl<T: TermTransform> TermTransform for Canon<T> {
        t.current.c_lflag &= !ICANON;
        if self.1 { t.current.c_lflag |= ICANON; }
        unsafe {
-           io_result(tcsetattr(t.stdout.as_raw_fd(), TCSANOW, &t.current))
+           io_result(tcsetattr(t.stdout.as_raw_fd(), TCSANOW, &t.current))?;
        }
+       self.0.commit(t)
     }
 }
 /// # Colour
@@ -323,3 +338,11 @@ pub enum Colour {
     RGB(u8,u8,u8),
 }
 
+pub enum Style {
+    None = 0,
+    Bold, Light,
+    Italic, Underline,
+    BlinkSlow, BlinkRapid,
+    Invert,
+    Hide, Strike,
+}
